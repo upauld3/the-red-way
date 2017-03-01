@@ -1,0 +1,103 @@
+
+import org.apache.tools.ant.filters.FixCrLfFilter
+import org.apache.tools.ant.filters.ReplaceTokens
+
+class Version {
+	String buildNumberString = System.getenv("TRAVIS_BUILD_NUMBER")
+
+	String toString() {
+		if (buildNumberString == null) {
+			"1.0.0.0"
+		} else {
+			int buildNumber = Integer.parseInt(buildNumberString)
+
+			"1.0.0.$buildNumber"
+		}
+	}
+}
+
+buildscript {
+	println "System Environmental Variables"
+	System.getenv().each {
+		println it;
+	}
+
+	repositories {
+		mavenCentral()
+	}
+
+	dependencies {
+		classpath "net.saliman:gradle-cobertura-plugin:2.2.8"
+	}
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'maven-publish'
+
+archivesBaseName = 'the-red-way'
+group='red.steady'
+version = new Version().toString();
+
+publishing {
+	publications {
+
+		mavenJava(MavenPublication) {
+			from components.java
+		}
+
+	}
+}
+
+apply plugin: 'findbugs'
+findbugs {		
+	ignoreFailures = true
+	effort = 'min'
+	reportsDir = file("$project.buildDir/findbugsReports")
+}
+
+tasks.withType(FindBugs) {
+	reports {
+		xml.enabled false
+		html.enabled true
+	}
+}
+
+apply plugin: "jacoco"
+jacoco {
+	reportsDir = file("$buildDir/jacoco")
+}
+jacocoTestReport {
+	reports {
+		xml.enabled true
+		xml.destination "${buildDir}/jacoco/xml"
+		csv.enabled false
+		html.enabled true
+		html.destination "${buildDir}/jacoco/html"
+	}
+}
+
+apply plugin: 'cobertura'
+cobertura {
+	//coberturaVersion = '2.2.8'
+	coverageReportDir = file("$project.buildDir/cobertura")
+	coverageCheckHaltOnFailure = false
+	coverageFormats = ['html', 'xml']
+	coverageIgnores = [ '@Builder', '@Data', '@ToString' ]
+	coverageExcludes = [ '.*CmdbServerEntry.*' ]
+	coverageIgnoreTrivial = true
+}
+
+repositories {
+	mavenCentral()
+}
+
+// Uses JDK 8
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+apply from: 'dependencies.gradle'
+
+apply from: 'project-dependencies.gradle'
+
+

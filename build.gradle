@@ -98,6 +98,5 @@ targetCompatibility = 1.8
 
 apply from: 'dependencies.gradle'
 
-apply from: 'project-dependencies.gradle'
 
 
